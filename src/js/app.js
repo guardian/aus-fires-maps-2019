@@ -95,31 +95,14 @@ function makeMap(states, data) {
 	}
 
 	drawMap();
-
-	// features.append("g")
-	//     .selectAll("path")
-	//     .data(topojson.feature(states,states.objects.states).features)
-	//     .enter().append("path")
-	//         .attr("class", "country")
-	//         .attr("id", d => d.properties.ADMIN)
-	//         .attr("fill", "#dcdcdc")
-	//         .attr("data-tooltip","")
-	//         .attr("d", path);
-
-	// if (width > 480) {
-	//     features.append("path")
-	//       .attr("class", "mesh")
-	//       .attr("stroke-width", 0.5)
-	//       .attr("d", path(topojson.mesh(states,states.objects.states, function(a, b) { return a !== b; }))); 
-	// }
 	      
-
 	var color = d3.scaleOrdinal()
 				.domain(['exploration', 'appraisal/pilot', 'development/production', 'other'])
-				.range(["#fa8775",
-						"#cd34b5",
-						"#0000ff",
-						"#767676"]);
+				.range(["rgba(250, 135, 117,0.8)",
+						"rgba(205, 52, 181,0.8)",
+						"rgba(0, 0, 255,0.8)",
+						"rgba(118, 118, 118, 0.8)"]);
+	
 
 
 	data.forEach(function(d) {
@@ -130,7 +113,7 @@ function makeMap(states, data) {
 
 	var dataByMonth = [];
 	
-	function updateCircles(i) {
+	function updateCircles(dateUpto) {
 
 		// draw map
 
@@ -138,32 +121,22 @@ function makeMap(states, data) {
 
 		drawMap()
 
-		if (i == 0) {
-			d3.selectAll(".mapCircle").remove()
-		}
+		console.log(dateUpto);
 
-		var newData = dataByMonth[i]
+		var uptoDate = parseDate(dateUpto);
 
-		// console.log(newData);
+		var filterData = data.filter(function(d){ return d.date < uptoDate});
 
-		// var mapCircles = features.selectAll(".mapCircle")
-		// 					.data(newData, function(d) { return d.index});				
+		filterData.forEach(function(d,i) {
+			context.beginPath();
+			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], 2, 0, 2 * Math.PI);
+			context.fillStyle = color(d.purpose)
+		    context.fill();
+		    context.closePath();
 
-		// mapCircles
-		// 	.exit()
-		// 	.remove()
-
-		var elements = locations.selectAll("points.arc");
-	  	elements.each(function(d) {
-	    var node = d3.select(this);
-	    context.beginPath();
-		context.arc(node.attr("x"), node.attr("y"), node.attr("radius"), 0, 2 * Math.PI);
-		context.fillStyle = node.attr("fillStyle");
-	    context.fill();
-	    context.closePath();
 		})
 
-
+	   
 		// mapCircles					
 		// 	.enter()
 		// 	.append("svg:circle")
@@ -187,46 +160,27 @@ function makeMap(states, data) {
 
 	var startDateStr = '1980-08-01'
 	// '2018-06-01'
-	
 	var endDate = moment('2018-06-01', 'YYYY-MM-DD')
-
-	
 	var currentDate = moment(startDateStr);
-	var prevDate = moment(startDateStr).subtract(1, 'months');
 
-	// while (currentDate < endDate) {
+	function animate(t) {
 
-	// 	console.log("prevDate",prevDate.format("YYYY-MM-DD"), "currentDate", currentDate.format("YYYY-MM-DD"))
+		if (currentDate > endDate) {
+			currentDate = moment(startDateStr, 'YYYY-MM-DD');
+		}
+		console.log(currentDate.format("YYYY-MM-DD"));
+		updateCircles(currentDate.format("YYYY-MM-DD"));
+		monthText.text(currentDate.format("MMM"))
+		yearText.text(currentDate.format("YYYY"))
+		currentDate.add(1, 'months'); 
+	
+	}
 
-	// 	var filterdata = data.filter(function(d)
-	// 		{ 
-	// 			if (d.date >= prevDate && d.date < currentDate)
-	// 			return d
-
-	// 		});
-
-	// 	dataByMonth.push(filterdata)
-	// 	currentDate.add(1, 'months'); 
-	// 	prevDate.add(1, 'months'); 
-	// }
-
-	console.log(dataByMonth);
+	var interval = d3.interval(animate, 100);
 
 	var monthText = d3.select("#monthText")
 	var yearText = d3.select("#yearText")
 
-
-	var endIndex = dataByMonth.length
-	var counter = 0;
-
-	function animate(t) {
-		console.log(counter);
-		if (counter == endIndex) {
-			counter = 0
-		}
-		// updateCircles(counter)
-		counter++
-	}
 
 	// var interval = d3.interval(animate, 200);
 

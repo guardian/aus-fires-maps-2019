@@ -51,14 +51,20 @@
   		stroke: #fff;
 	}
 
-	.red_underline {
-		border-bottom: 2px solid #e31a1c;
+	.exploration {
+		border-bottom: 2px solid rgb(250, 135, 117);
 	}
 
-	.orange_underline {
+	.appraisal {
+		border-bottom: 2px solid rgb(205, 52, 181);
+	}
 
-		border-bottom: 2px solid #fecc5c;
+	.development {
+		border-bottom: 2px solid rgb(0, 0, 255);
+	}
 
+	.other {
+		border-bottom: 2px solid rgb(118, 118, 118);
 	}
 	
 	.notes {
