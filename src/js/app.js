@@ -42,6 +42,8 @@ function makeMap(states, data) {
 	var topRadius = 25 * scaleFactor;
 	var bottomRadius = 3 * scaleFactor;
 
+
+
 	var radius = d3.scaleSqrt()
 					.range([bottomRadius,topRadius])    
 					.domain([1,550])	
@@ -51,72 +53,65 @@ function makeMap(states, data) {
 	                .scale(width * 1.8)
 	                .translate([width/2,height/2])
 
-	var path = d3.geoPath()
-	    .projection(projection);
 
-	var graticule = d3.geoGraticule();  
+	var locations = d3.select('#points');	                
 
-	// console.log(sa2s.objects.sa2s)
-
-	var zoom = d3.zoom()
-	        .scaleExtent([1, 100])
-	        .on("zoom", zoomed);    
+	// console.log(sa2s.objects.sa2s
+	   
 
 	d3.select("#mapContainer svg").remove();
 	        
-	var svg = d3.select("#mapContainer").append("svg")	
+	var canvas = d3.select("#mapContainer").append("canvas")	
 	                .attr("width", width)
 	                .attr("height", height)
 	                .attr("id", "map")
-	                .attr("overflow", "hidden")
-	                .on("mousemove", tooltipMove)
-	                .on('onTouchStart', function(currentSwiper, e) {
-	                    if (isAndroidApp && window.GuardianJSInterface.registerRelatedCardsTouch) {
-	                        window.GuardianJSInterface.registerRelatedCardsTouch(true);
-	                    }
-	                })
-	                .on('onTouchEnd', function(currentSwiper, e) {
-	                    if (isAndroidApp && window.GuardianJSInterface.registerRelatedCardsTouch) {
-	                        window.GuardianJSInterface.registerRelatedCardsTouch(false);
-	                    }
-	                });
+	                .attr("overflow", "hidden");                          
 
-	// if (zoomOn == true | zoomOn == null) {
-	//     svg.call(zoom)
-	// }                
+	var context = canvas.node().getContext("2d"); 	              
 
-	var tooltip = d3.select("#mapContainer")
-	    .append("div")
-	    .attr("class", "tooltip")
-	    .style("position", "absolute")
-	    .style("z-index", "20")
-	    .style("visibility", "hidden")
-	    .style("top", "30px")
-	    .style("left", "55px");                 
+	// context.clearRect(0, 0, width, height);
 
-	var features = svg.append("g")
+	var path = d3.geoPath()
+	    .projection(projection)
+	    .context(context);
 
-	features.append("path")
-	            .datum(graticule)
-	            .attr("class", "graticule")
-	            .attr("d", path);                       
+	var graticule = d3.geoGraticule();  
 
-	features.append("g")
-	    .selectAll("path")
-	    .data(topojson.feature(states,states.objects.states).features)
-	    .enter().append("path")
-	        .attr("class", "country")
-	        .attr("id", d => d.properties.ADMIN)
-	        .attr("fill", "#dcdcdc")
-	        .attr("data-tooltip","")
-	        .attr("d", path);
+	function drawMap() {
+		context.beginPath();
+	    path(graticule());
+	    context.strokeStyle = "#efefef";
+	    context.stroke();
+	    
+	    context.beginPath();
+	    path(topojson.feature(states,states.objects.states));
+	    context.fillStyle = "#dcdcdc";
+	    context.fill();
 
-	if (width > 480) {
-	    features.append("path")
-	      .attr("class", "mesh")
-	      .attr("stroke-width", 0.5)
-	      .attr("d", path(topojson.mesh(states,states.objects.states, function(a, b) { return a !== b; }))); 
+	    context.beginPath();
+	    path(topojson.mesh(states,states.objects.states, function(a, b) { return a !== b; }));
+	    context.strokeStyle= "#ffffff";
+	    context.stroke();
 	}
+
+	drawMap();
+
+	// features.append("g")
+	//     .selectAll("path")
+	//     .data(topojson.feature(states,states.objects.states).features)
+	//     .enter().append("path")
+	//         .attr("class", "country")
+	//         .attr("id", d => d.properties.ADMIN)
+	//         .attr("fill", "#dcdcdc")
+	//         .attr("data-tooltip","")
+	//         .attr("d", path);
+
+	// if (width > 480) {
+	//     features.append("path")
+	//       .attr("class", "mesh")
+	//       .attr("stroke-width", 0.5)
+	//       .attr("d", path(topojson.mesh(states,states.objects.states, function(a, b) { return a !== b; }))); 
+	// }
 	      
 
 	var color = d3.scaleOrdinal()
@@ -137,6 +132,12 @@ function makeMap(states, data) {
 	
 	function updateCircles(i) {
 
+		// draw map
+
+		context.clearRect(0,0,width,height);
+
+		drawMap()
+
 		if (i == 0) {
 			d3.selectAll(".mapCircle").remove()
 		}
@@ -145,24 +146,35 @@ function makeMap(states, data) {
 
 		// console.log(newData);
 
-		var mapCircles = features.selectAll(".mapCircle")
-							.data(newData, function(d) { return d.index});				
+		// var mapCircles = features.selectAll(".mapCircle")
+		// 					.data(newData, function(d) { return d.index});				
 
 		// mapCircles
 		// 	.exit()
 		// 	.remove()
 
-		mapCircles					
-			.enter()
-			.append("svg:circle")
-			.attr("class", "mapCircle")
-			.attr("cx",function(d){
-			 return projection([d.lon,d.lat])[0]
-			})
-			.attr("cy",function(d){ return projection([d.lon,d.lat])[1]})
-			.attr("r", function(d){ return 2 })
-			.style("fill", function(d) { return color(d.purpose); })
-			.style("opacity", 0.8);
+		var elements = locations.selectAll("points.arc");
+	  	elements.each(function(d) {
+	    var node = d3.select(this);
+	    context.beginPath();
+		context.arc(node.attr("x"), node.attr("y"), node.attr("radius"), 0, 2 * Math.PI);
+		context.fillStyle = node.attr("fillStyle");
+	    context.fill();
+	    context.closePath();
+		})
+
+
+		// mapCircles					
+		// 	.enter()
+		// 	.append("svg:circle")
+		// 	.attr("class", "mapCircle")
+		// 	.attr("cx",function(d){
+		// 	 return projection([d.lon,d.lat])[0]
+		// 	})
+		// 	.attr("cy",function(d){ return projection([d.lon,d.lat])[1]})
+		// 	.attr("r", function(d){ return 2 })
+		// 	.style("fill", function(d) { return color(d.purpose); })
+		// 	.style("opacity", 0.8);
 
 
 	}
@@ -182,21 +194,21 @@ function makeMap(states, data) {
 	var currentDate = moment(startDateStr);
 	var prevDate = moment(startDateStr).subtract(1, 'months');
 
-	while (currentDate < endDate) {
+	// while (currentDate < endDate) {
 
-		console.log("prevDate",prevDate.format("YYYY-MM-DD"), "currentDate", currentDate.format("YYYY-MM-DD"))
+	// 	console.log("prevDate",prevDate.format("YYYY-MM-DD"), "currentDate", currentDate.format("YYYY-MM-DD"))
 
-		var filterdata = data.filter(function(d)
-			{ 
-				if (d.date >= prevDate && d.date < currentDate)
-				return d
+	// 	var filterdata = data.filter(function(d)
+	// 		{ 
+	// 			if (d.date >= prevDate && d.date < currentDate)
+	// 			return d
 
-			});
+	// 		});
 
-		dataByMonth.push(filterdata)
-		currentDate.add(1, 'months'); 
-		prevDate.add(1, 'months'); 
-	}
+	// 	dataByMonth.push(filterdata)
+	// 	currentDate.add(1, 'months'); 
+	// 	prevDate.add(1, 'months'); 
+	// }
 
 	console.log(dataByMonth);
 
@@ -212,124 +224,12 @@ function makeMap(states, data) {
 		if (counter == endIndex) {
 			counter = 0
 		}
-		updateCircles(counter)
+		// updateCircles(counter)
 		counter++
 	}
 
-	var interval = d3.interval(animate, 200);
+	// var interval = d3.interval(animate, 200);
 
-	function tooltipMove(d) {
-	    var leftOffset = 0
-	    var rightOffset = 0
-	    var mouseX = d3.mouse(this)[0]
-	    var mouseY = d3.mouse(this)[1]
-	    var half = width/2;
-	    if (mouseX < half) {
-	        d3.select(".tooltip").style("left", d3.mouse(this)[0] + "px");
-	    }
-
-	    else if (mouseX >= half) {
-	        d3.select(".tooltip").style("left", ( d3.mouse(this)[0] -200) + "px");
-	    }
-	    
-	    d3.select(".tooltip").style("top", (d3.mouse(this)[1] + 30 ) + "px");
-	}       
-
-	function tooltipIn(d) {     
-		console.log(d)
-	    // var tooltipText = d3.select(this).attr('data-tooltip')
-	    d3.select(".tooltip").html(`<b>${d.region}</b><br>Alert status: <b>${d['2018-19']}</b>`).style("visibility", "visible");
-	    
-	}
-
-	function tooltipOut(d) {
-	    d3.select(".tooltip").style("visibility", "hidden");
-	}           
-
-
-	d3.select("#zoomIn").on("click", function(d) {
-	    zoom.scaleBy(svg.transition().duration(750), 1.5);
-	});    
-
-	d3.select("#zoomOut").on("click", function(d) {
-	    zoom.scaleBy(svg.transition().duration(750), 1/1.5);
-	}); 
-
-	d3.select("#zoomToggle").on("click", function(d) {
-	    toggleZoom();
-	}); 
-
-	function toggleZoom() {
-
-	    
-	    console.log(zoomOn)
-	    if (zoomOn == false) {
-	        d3.select("#zoomToggle").classed("zoomLocked", false)
-	        d3.select("#zoomToggle").classed("zoomUnlocked", true) 
-	        svg.call(zoom);
-	        zoomOn = true
-	    }
-
-	    else if (zoomOn == true) {
-	        svg.on('.zoom', null);
-	        d3.select("#zoomToggle").classed("zoomLocked", true)
-	        d3.select("#zoomToggle").classed("zoomUnlocked", false) 
-	        zoomOn = false
-	    }
-
-	    else if (zoomOn == null) {
-	        svg.on('.zoom', null);
-	        d3.select("#zoomToggle").classed("zoomLocked", true)
-	        d3.select("#zoomToggle").classed("zoomUnlocked", false)  
-	        svg.call(zoom);
-	        zoomOn = false
-	    }
-
-	   
-	}
-
-
-	if (width < 500) {
-	    if (zoomOn == null) {
-	        toggleZoom()
-	    }
-	}
-
-	function zoomed() {
-	    
-	    scaleFactor = d3.event.transform.k;
-	    d3.selectAll(".mesh").style("stroke-width", 0.5 / d3.event.transform.k + "px");
-	    features.style("stroke-width", 0.5 / d3.event.transform.k + "px");
-	    features.attr("transform", d3.event.transform); // updated for d3 v4
-
-	    features.selectAll(".placeContainers")
-	        .style("display", function(d) { 
-	            if (d['properties']['scalerank'] < d3.event.transform.k) {
-	                return "block";
-	            }
-	            else {
-	                return "none";
-	            }
-	            })
-
-	    features.selectAll(".placeText")
-	            .style("font-size", 0.8/d3.event.transform.k + "rem")
-	            .attr("dx", 5/d3.event.transform.k )
-	            .attr("dy", 5/d3.event.transform.k );   
-
-	    features.selectAll(".mapCircle")
-			.attr("r", radius/d3.event.transform.k )
-			.style("stroke-width", .5 / d3.event.transform.k + "px");                    
-
-	}
-
-	function reset() {
-	    active.classed("active", false);
-	    active = d3.select(null);
-	    svg.transition()
-	        .duration(750)
-	        .call( zoom.transform, d3.zoomIdentity );
-	}
 
 
 }
