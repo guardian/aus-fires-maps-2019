@@ -137,6 +137,10 @@ function makeMap(states, data) {
 	
 	function updateCircles(i) {
 
+		if (i == 0) {
+			d3.selectAll(".mapCircle").remove()
+		}
+
 		var newData = dataByMonth[i]
 
 		// console.log(newData);
