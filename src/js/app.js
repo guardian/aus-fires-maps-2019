@@ -133,34 +133,32 @@ function makeMap(states, data) {
 		d.date = parseDate(d.date);
 	})
 
+	var dataByMonth = [];
 	
-	function updateCircles(dateUpto) {
-		console.log(dateUpto);
+	function updateCircles(i) {
 
-		var uptoDate = parseDate(dateUpto);
-		console.log(uptoDate)
-		var filterData = data.filter(function(d){ return d.date < uptoDate});
+		var newData = dataByMonth[i]
 
-		// console.log(filterData);
+		// console.log(newData);
 
 		var mapCircles = features.selectAll(".mapCircle")
-							.data(filterData);				
+							.data(newData, function(d) { return d.index});				
 
-		mapCircles
-			.exit()
-			.remove()
+		// mapCircles
+		// 	.exit()
+		// 	.remove()
 
 		mapCircles					
 			.enter()
-				.append("svg:circle")
-				.attr("class", "mapCircle")
-				.attr("cx",function(d){
-				 return projection([d.lon,d.lat])[0]
-				})
-				.attr("cy",function(d){ return projection([d.lon,d.lat])[1]})
-				.attr("r", function(d){ return 2 })
-				.style("fill", function(d) { return color(d.purpose); })
-				.style("opacity", 0.8);
+			.append("svg:circle")
+			.attr("class", "mapCircle")
+			.attr("cx",function(d){
+			 return projection([d.lon,d.lat])[0]
+			})
+			.attr("cy",function(d){ return projection([d.lon,d.lat])[1]})
+			.attr("r", function(d){ return 2 })
+			.style("fill", function(d) { return color(d.purpose); })
+			.style("opacity", 0.8);
 
 
 	}
@@ -170,31 +168,51 @@ function makeMap(states, data) {
 
 	// updateCircles('1996-01-01');
 
-	
-
-	
 
 	var startDateStr = '1980-08-01'
 	// '2018-06-01'
+	
 	var endDate = moment('2018-06-01', 'YYYY-MM-DD')
+
+	
 	var currentDate = moment(startDateStr);
+	var prevDate = moment(startDateStr).subtract(1, 'months');
+
+	while (currentDate < endDate) {
+
+		console.log("prevDate",prevDate.format("YYYY-MM-DD"), "currentDate", currentDate.format("YYYY-MM-DD"))
+
+		var filterdata = data.filter(function(d)
+			{ 
+				if (d.date >= prevDate && d.date < currentDate)
+				return d
+
+			});
+
+		dataByMonth.push(filterdata)
+		currentDate.add(1, 'months'); 
+		prevDate.add(1, 'months'); 
+	}
+
+	console.log(dataByMonth);
+
 	var monthText = d3.select("#monthText")
 	var yearText = d3.select("#yearText")
 
-	function animate(t) {
 
-		if (currentDate > endDate) {
-			currentDate = moment(startDateStr, 'YYYY-MM-DD');
+	var endIndex = dataByMonth.length
+	var counter = 0;
+
+	function animate(t) {
+		console.log(counter);
+		if (counter == endIndex) {
+			counter = 0
 		}
-		console.log(currentDate.format("YYYY-MM-DD"));
-		updateCircles(currentDate.format("YYYY-MM-DD"));
-		monthText.text(currentDate.format("MMM"))
-		yearText.text(currentDate.format("YYYY"))
-		currentDate.add(1, 'months'); 
-	
+		updateCircles(counter)
+		counter++
 	}
 
-	var interval = d3.interval(animate, 100);
+	var interval = d3.interval(animate, 200);
 
 	function tooltipMove(d) {
 	    var leftOffset = 0
