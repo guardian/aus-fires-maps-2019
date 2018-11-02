@@ -30,13 +30,20 @@ function makeMap(states, data, places) {
 		mapScale = 2
 	}
 
+	var maxYears = 10 * 364
+
 	var radius = d3.scaleSqrt()
 					.range([bottomRadius,topRadius])    
-					.domain([1,550])	
+					.domain([6,400])	
+
+	var gradient = d3.scaleLinear()
+						.range(['rgba(219, 0, 14, 0.6)', 'rgba(1, 77, 175, 0.6)'])
+						.domain([0,maxYears])
+
 
 	var projection = d3.geoMercator()
-	                .center([155,-28])
-	                .scale(width * mapScale)
+	                .center([133.5,-27])
+	                .scale(width * 0.8)
 	                .translate([width/2,height/2])
 
 
@@ -50,7 +57,7 @@ function makeMap(states, data, places) {
 	var canvas = d3.select("#mapContainer").append("canvas")	
 	                .attr("width", width)
 	                .attr("height", height)
-	                .attr("id", "map")
+	                .attr("id", "map-animation-csg")
 	                .attr("overflow", "hidden");                          
 
 	var context = canvas.node().getContext("2d"); 	              
@@ -104,20 +111,20 @@ function makeMap(states, data, places) {
 
 	drawMap();
 	      
-	var colorPurpose = d3.scaleOrdinal()
-				.domain(['exploration', 'appraisal/pilot', 'development/production', 'other'])
-				.range(["rgba(250, 135, 117,0.8)",
-						"rgba(205, 52, 181,0.8)",
-						"rgba(0, 0, 255,0.8)",
-						"rgba(118, 118, 118, 0.8)"]);
+	// var colorPurpose = d3.scaleOrdinal()
+	// 			.domain(['exploration', 'appraisal/pilot', 'development/production', 'other'])
+	// 			.range(["rgba(250, 135, 117,0.8)",
+	// 					"rgba(205, 52, 181,0.8)",
+	// 					"rgba(0, 0, 255,0.8)",
+	// 					"rgba(118, 118, 118, 0.8)"]);
 	
-	var colorStatus = d3.scaleOrdinal()
-				.domain(["plugged and abandoned","suspended/capped/shut-in","producing","water bore","unknown"])
-				.range(["rgba(255,164,116,0.8)",
-						"rgba(244,116,97,0.8)",
-						"rgba(139,0,0,0.8)",
-						"rgba(118, 118, 118, 0.8)",
-						"rgba(118, 118, 118, 0.8)"]);
+	// var colorStatus = d3.scaleOrdinal()
+	// 			.domain(["plugged and abandoned","suspended/capped/shut-in","producing","water bore","unknown"])
+	// 			.range(["rgba(255,164,116,0.8)",
+	// 					"rgba(244,116,97,0.8)",
+	// 					"rgba(139,0,0,0.8)",
+	// 					"rgba(118, 118, 118, 0.8)",
+	// 					"rgba(118, 118, 118, 0.8)"]);
 
 
 
@@ -162,11 +169,11 @@ function makeMap(states, data, places) {
 	}			
 
 	data.forEach(function(d) {
-		d.lat = +d.lat;
-		d.lon = +d.lon;
-		d.date = parseDate(d.date);
-		d.sort_status = sortStatusIndex(d.status)
-		d.sort_purpose = sortPurposeIndex(d.purpose)
+		d.lat = +d.Latitude;
+		d.lon= +d.Longitude;
+		d.date = parseDate(d.DateStart);
+		// d.sort_status = sortStatusIndex(d.status)
+		// d.sort_purpose = sortPurposeIndex(d.purpose)
 	})
 
 	
@@ -176,12 +183,43 @@ function makeMap(states, data, places) {
 		})
 	}
 
+	function getRadius(d) {
+		if (d < 6) {
+			return radius(6)
+		}
+
+		else {
+			return radius(d)
+		}
+	}
+
+	function fillGradient(date1, date2) {
+		//Get 1 day in milliseconds
+		var one_day=1000*60*60*24;
+
+		// Convert both dates to milliseconds
+		var date1_ms = date1.getTime();
+		var date2_ms = date2.getTime();
+
+		// Calculate the difference in milliseconds
+		var difference_ms = date2_ms - date1_ms;
+
+		// Convert back to days and return
+		console.log(Math.round(difference_ms/one_day))
+		var daysDiff = Math.round(difference_ms/one_day)
+		if (daysDiff > maxYears) {
+			daysDiff = maxYears
+		}
+		return gradient(Math.round(daysDiff))
+	}
+
+
 	function updateCircles(dateUpto,show) {
 
 		// draw map
 
 		context.clearRect(0,0,width,height);
-		console.log(show)
+		// console.log(show)
 		drawMap()
 
 		// console.log(dateUpto);
@@ -190,25 +228,12 @@ function makeMap(states, data, places) {
 
 		var filterData = data.filter(function(d){ return d.date < uptoDate});
 
-		function fillCategory(d) {
-				if (show === 'status') {
-					return colorStatus(d.status)
-				}
-
-				else if (show === 'purpose') {
-					return colorPurpose(d.purpose)	
-				}
-				
-		}
-
 		filterData.forEach(function(d,i) {
-
 			context.beginPath();
-			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], 2, 0, 2 * Math.PI);
-			context.fillStyle = fillCategory(d)
+			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], getRadius(d.Aborig_Dead), 0, 2 * Math.PI);
+			context.fillStyle = fillGradient(d.date, uptoDate)
 		    context.fill();
 		    context.closePath();
-
 		})
 
 
@@ -220,10 +245,10 @@ function makeMap(states, data, places) {
 	// updateCircles('1996-01-01');
 
 
-	var startDateStr = '1980-08-01'
+	var startDateStr = '1794-01-01'
 	var latest = '2018-06-01'
 	// '2018-06-01'
-	var endDate = moment('2018-06-01', 'YYYY-MM-DD')
+	var endDate = moment('1916-01-01', 'YYYY-MM-DD')
 	var currentDate = moment(startDateStr);
 
 	function animate(t) {
@@ -231,11 +256,11 @@ function makeMap(states, data, places) {
 		if (currentDate > endDate) {
 			currentDate = moment(startDateStr, 'YYYY-MM-DD');
 		}
-		console.log(currentDate.format("YYYY-MM-DD"));
+		// console.log(currentDate.format("YYYY-MM-DD"));
 		updateCircles(currentDate.format("YYYY-MM-DD"), 'purpose');
 		monthText.text(currentDate.format("MMM"))
 		yearText.text(currentDate.format("YYYY"))
-		currentDate.add(1, 'months'); 
+		currentDate.add(1, 'years'); 
 	
 	}
 
@@ -245,7 +270,6 @@ function makeMap(states, data, places) {
 
 	sortData('purpose');
 	var interval = d3.interval(animate, 100);
-
 	var monthText = d3.select("#monthText")
 	var yearText = d3.select("#yearText")
 
@@ -259,7 +283,7 @@ function makeMap(states, data, places) {
 
 Promise.all([
 	d3.json('<%= path %>/assets/au-states.json'),
-	d3.csv('<%= path %>/assets/combined-wells.csv'),
+	d3.csv('<%= path %>/assets/combined.csv'),
 	d3.json('<%= path %>/assets/places.json')
 ])
 .then((results) =>  {

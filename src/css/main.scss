@@ -2,10 +2,9 @@
 @import "fonts";
 @import "palette";
 // Uncomment for embeds
-@import "embed";
 
 // Uncomment for full screen (including immersive article main media)
-//@import "fullscreen";
+
 
 .element-atom,
 .interactive-atom {
@@ -104,6 +103,18 @@
 		top:2%;
 		right:10%;
 		pointer-events: none;
+		background-color:#005689;
+		border-radius: 70px;
+		-moz-border-radius: 70px;
+		-webkit-border-radius:70px;
+		width:70px;
+		height:70px;
+		text-align: center;
+		color:#FFF;
+	}
+
+	#monthText {
+		margin-top:10px;
 	}
 
 	.zoomButtons {
@@ -199,7 +210,7 @@
 
 	@media (min-width: 1140px) {
 	.main-col {
-		margin-left:8.25rem;
+		margin-left:10rem;
 		width:560px;
 		float: left;
 		}  
@@ -207,7 +218,7 @@
 
 	@media (min-width: 1300px) {
 		.main-col {
-			margin-left: 13.25rem;
+			margin-left: 15rem;
 			width:640px;
 			float: left;
 		} 
