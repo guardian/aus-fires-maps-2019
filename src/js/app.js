@@ -58,11 +58,11 @@ function makeMap(states, data, places) {
 	d3.select("#mapContainer canvas").remove();
 	d3.select("#keyContainer svg").remove();
 
-	var keyWidth = 100
+	var keyWidth = 110
 	var keyHeight = 100
 
 	if (width < 450) {
-		keyWidth = 70
+		keyWidth = 110
 		keyHeight = 70
 	}
 
@@ -102,7 +102,7 @@ function makeMap(states, data, places) {
 		.attr("x", keyWidth * 0.5)
 		.attr("y", 20)
 		.attr("text-anchor", "middle")
-		.text("Deaths");			
+		.text("Estimated deaths");			
 
 	var canvas = d3.select(".interactive-container #mapContainer").append("canvas")	
 	                .attr("width", width)
