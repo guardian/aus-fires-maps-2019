@@ -2,7 +2,9 @@ import * as d3 from "d3"
 import * as topojson from "topojson"
 import moment from "moment"
 
-var zoomOn = null;
+var interval = null;
+var firstRun = true;
+var currentDate = null;
 
 function makeMap(states, data, places) {
 
@@ -12,7 +14,7 @@ function makeMap(states, data, places) {
 	var height = width * 0.6
 	var mobile = false;
 
-	if (width < 500) {
+	if (width < 861) {
 	    height = width * 0.8;
 	    mobile = true;
 	}
@@ -21,14 +23,14 @@ function makeMap(states, data, places) {
 	var scaleFactor = width / 860
 	var parseDate = d3.timeParse("%Y-%m-%d");
 
-	var topRadius = 25 * scaleFactor;
-	var bottomRadius = 3 * scaleFactor;
+	var topRadius = 10 * scaleFactor;
+	var bottomRadius = 2;
 
-	var mapScale = 1.8;
+	// var mapScale = 1.8;
 
-	if (mobile) {
-		mapScale = 2
-	}
+	// if (mobile) {
+	// 	mapScale = 2
+	// }
 
 	var maxYears = 10 * 364
 
@@ -42,19 +44,67 @@ function makeMap(states, data, places) {
 
 
 	var projection = d3.geoMercator()
-	                .center([133.5,-27])
-	                .scale(width * 0.8)
-	                .translate([width/2,height/2])
+	                .scale(1)
+	                .translate([0,0])
 
 
 	var locations = d3.select('#points');	                
+	var imageObj = new Image()
+	imageObj.src = '<%= path %>/assets/aus-crop-light.png'
 
 	// console.log(sa2s.objects.sa2s
 	   
 
-	d3.select("#mapContainer svg").remove();
-	        
-	var canvas = d3.select("#mapContainer").append("canvas")	
+	d3.select("#mapContainer canvas").remove();
+	d3.select("#keyContainer svg").remove();
+
+	var keyWidth = 100
+	var keyHeight = 100
+
+	if (width < 450) {
+		keyWidth = 70
+		keyHeight = 70
+	}
+
+	var key = d3.select("#keyContainer").append("svg")
+					.attr("width", keyWidth)
+	                .attr("height", keyHeight)
+	                .attr("id", "keySvg");
+
+	key.append("svg:circle")
+		.attr("class", "keyCircle")
+		.attr("cx", keyWidth * 0.33)
+		.attr("cy",keyHeight * 0.5)
+		.attr("r", radius(6));
+             
+	key.append("svg:circle")
+		.attr("class", "keyCircle")
+		.attr("cx", keyWidth * 0.66)
+		.attr("cy",keyHeight * 0.5)
+		.attr("r", radius(400));
+
+	key.append("text")
+		.attr("class", "keyLabel")
+		.attr("x", keyWidth * 0.33)
+		.attr("y",keyHeight * 0.8)
+		.attr("text-anchor", "middle")
+		.text("6");	
+
+	key.append("text")
+		.attr("class", "keyLabel")
+		.attr("x", keyWidth * 0.66)
+		.attr("y", keyHeight * 0.8)
+		.attr("text-anchor", "middle")
+		.text("400");		
+	
+	key.append("text")
+		.attr("class", "keyHeading")
+		.attr("x", keyWidth * 0.5)
+		.attr("y", 20)
+		.attr("text-anchor", "middle")
+		.text("Deaths");			
+
+	var canvas = d3.select(".interactive-container #mapContainer").append("canvas")	
 	                .attr("width", width)
 	                .attr("height", height)
 	                .attr("id", "map-animation-csg")
@@ -67,6 +117,26 @@ function makeMap(states, data, places) {
 	var path = d3.geoPath()
 	    .projection(projection)
 	    .context(context);
+
+	var bounds = path.bounds(topojson.feature(states,states.objects.states));
+
+	var mapScale = 1 / Math.max(
+	    (bounds[1][0] - bounds[0][0]) / width,
+	    (bounds[1][1] - bounds[0][1]) / height);
+
+	var translation = [
+	    (width - mapScale * (bounds[1][0] + bounds[0][0])) / 2,
+	    (height - mapScale * (bounds[1][1] + bounds[0][1])) / 2];
+
+	projection
+		.scale(mapScale)
+		.translate(translation);
+
+	var raster_width = (bounds[1][0] - bounds[0][0]) * mapScale;
+	var raster_height = (bounds[1][1] - bounds[0][1]) * mapScale;
+
+	var rtranslate_x = (width - raster_width) / 2;
+	var rtranslate_y = (height - raster_height) / 2;	       
 
 	var graticule = d3.geoGraticule();  
 
@@ -83,31 +153,40 @@ function makeMap(states, data, places) {
 	// console.log(filterPlaces);
 
 	function drawMap() {
-		context.beginPath();
-	    path(graticule());
-	    context.strokeStyle = "#efefef";
-	    context.stroke();
+		// context.beginPath();
+	 //    path(graticule());
+	 //    context.strokeStyle = "#efefef";
+	 //    context.stroke();
 	    
-	    context.beginPath();
-	    path(topojson.feature(states,states.objects.states));
-	    context.fillStyle = "#dcdcdc";
-	    context.fill();
+	    context.drawImage(imageObj, rtranslate_x, rtranslate_y, raster_width, raster_height);
+
+	    // context.beginPath();
+	    // path(topojson.feature(states,states.objects.states));
+	    // context.fillStyle = "#dcdcdc";
+	    // context.fill();
 
 	    context.beginPath();
-	    path(topojson.mesh(states,states.objects.states, function(a, b) { return a !== b; }));
-	    context.strokeStyle= "#ffffff";
+	    path(topojson.mesh(states,states.objects.states));
+	    context.strokeStyle= "#bcbcbc";
 	    context.stroke();
+	    context.closePath();
 
 	    filterPlaces.forEach(function(d,i) {
 			context.beginPath();
-			context.fillStyle = "#767676";
+			context.save();
+			context.fillStyle="#767676";
+			context.shadowColor="white";
+			context.shadowBlur=5;
 			context.fillText(d.properties.name,projection([d.properties.longitude,d.properties.latitude])[0],projection([d.properties.longitude,d.properties.latitude])[1]);
 			context.font = "15px 'Guardian Text Sans Web' Arial";
 		    context.closePath();
+		    context.restore();
 
 		})
 
 	}
+
+
 
 	drawMap();
 	      
@@ -171,12 +250,14 @@ function makeMap(states, data, places) {
 	data.forEach(function(d) {
 		d.lat = +d.Latitude;
 		d.lon= +d.Longitude;
-		d.date = parseDate(d.DateStart);
+		if (firstRun) {
+			d.date = parseDate(d.date);
+		}
+		
 		// d.sort_status = sortStatusIndex(d.status)
 		// d.sort_purpose = sortPurposeIndex(d.purpose)
 	})
 
-	
 	function sortData(sortBy) {
 		data.sort(function(a, b){
    			return d3.descending(a["sort_" + sortBy], b["sort_" + sortBy]);
@@ -205,7 +286,7 @@ function makeMap(states, data, places) {
 		var difference_ms = date2_ms - date1_ms;
 
 		// Convert back to days and return
-		console.log(Math.round(difference_ms/one_day))
+		// console.log(Math.round(difference_ms/one_day))
 		var daysDiff = Math.round(difference_ms/one_day)
 		if (daysDiff > maxYears) {
 			daysDiff = maxYears
@@ -214,7 +295,7 @@ function makeMap(states, data, places) {
 	}
 
 
-	function updateCircles(dateUpto,show) {
+	function updateCircles(dateUpto) {
 
 		// draw map
 
@@ -222,15 +303,15 @@ function makeMap(states, data, places) {
 		// console.log(show)
 		drawMap()
 
-		// console.log(dateUpto);
-
 		var uptoDate = parseDate(dateUpto);
 
-		var filterData = data.filter(function(d){ return d.date < uptoDate});
+		var filterData = data.filter(function(d){ 
+			return d.date < uptoDate
+		});
 
 		filterData.forEach(function(d,i) {
 			context.beginPath();
-			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], getRadius(d.Aborig_Dead), 0, 2 * Math.PI);
+			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], getRadius(d.Total_Dead_Mean), 0, 2 * Math.PI);
 			context.fillStyle = fillGradient(d.date, uptoDate)
 		    context.fill();
 		    context.closePath();
@@ -241,6 +322,7 @@ function makeMap(states, data, places) {
 
 	statusMessage.transition(600).style("opacity",0);
 
+	var animationSpeed = 25
 
 	// updateCircles('1996-01-01');
 
@@ -248,35 +330,68 @@ function makeMap(states, data, places) {
 	var startDateStr = '1794-01-01'
 	var latest = '2018-06-01'
 	// '2018-06-01'
-	var endDate = moment('1916-01-01', 'YYYY-MM-DD')
-	var currentDate = moment(startDateStr);
+	var endDate = moment('1930-01-01', 'YYYY-MM-DD')
+	if (firstRun) {
+		currentDate = moment(startDateStr);
+	}
 
 	function animate(t) {
 
-		if (currentDate > endDate) {
-			currentDate = moment(startDateStr, 'YYYY-MM-DD');
+		if (currentDate.isSameOrAfter(endDate)) {
+			console.log("stop")
+			interval.stop()
+			animationRestart();
 		}
+
 		// console.log(currentDate.format("YYYY-MM-DD"));
-		updateCircles(currentDate.format("YYYY-MM-DD"), 'purpose');
+		updateCircles(currentDate.format("YYYY-MM-DD"));
 		monthText.text(currentDate.format("MMM"))
 		yearText.text(currentDate.format("YYYY"))
-		currentDate.add(1, 'years'); 
+		currentDate.add(1, 'months'); 
 	
 	}
+
 
 	// sortData('status');
 	// console.log(data)
 	// updateCircles(latest,'status');
 
 	sortData('purpose');
-	var interval = d3.interval(animate, 100);
+	// console.log(interval)
+	// if (interval != null) {
+	// 	console.log(interval)
+	// 	interval.stop()
+	// }
+	interval = d3.interval(animate, animationSpeed);
 	var monthText = d3.select("#monthText")
 	var yearText = d3.select("#yearText")
 
+	function animationRestart() {
+		console.log("pause")
+		
+		monthText.text("Replaying")
 
+		var t = d3.timer(function(elapsed) {
+			monthText.text("Paused")
+		  	yearText.text(10 - Math.round(elapsed/1000))
+		  	// console.log(elapsed)
+		  	if (elapsed > 10000)
+
+		  	{
+		  		t.stop()
+		  		currentDate = moment(startDateStr, 'YYYY-MM-DD');
+				interval.restart(animate, animationSpeed)
+		  	} 
+		}, 1000);
+
+		// setTimeout(function(){ 
+		// 	console.log("restart")
+		// 	currentDate = moment(startDateStr, 'YYYY-MM-DD');
+		// 	interval.restart(animate, animationSpeed)
+		// }, 100000);
+	}
+	firstRun = false
 	// var interval = d3.interval(animate, 200);
-
-
 
 }
 
@@ -288,4 +403,21 @@ Promise.all([
 ])
 .then((results) =>  {
 	makeMap(results[0],results[1],results[2])
+
+	var to=null
+	var lastWidth = document.querySelector("#mapContainer").getBoundingClientRect()
+	window.addEventListener('resize', function() {
+
+		var thisWidth = document.querySelector("#mapContainer").getBoundingClientRect()
+		if (lastWidth != thisWidth) {
+			
+			window.clearTimeout(to);
+			to = window.setTimeout(function() {
+					interval.stop()
+				    makeMap(results[0],results[1],results[2])
+				}, 100)
+		}
+			
+	})
+
 });

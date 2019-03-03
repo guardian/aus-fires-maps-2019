@@ -1,10 +1,12 @@
 @import "mq";
 @import "fonts";
 @import "palette";
+@import "interactives";
 // Uncomment for embeds
 
-// Uncomment for full screen (including immersive article main media)
+@import "embed";
 
+// Uncomment for full screen (including immersive article main media)
 
 .element-atom,
 .interactive-atom {
@@ -13,6 +15,10 @@
 
 .interactive-container {
 
+	background: #FFF;
+
+	max-width:1200px;
+
 	#mapContainer {
 		position: relative; 
 		width:100%;
@@ -20,12 +26,12 @@
 
 	}
 
-	.figureTitle {
+/*	.figureTitle {
 	    font-family: "Guardian Egyptian Web",Georgia,serif;
 	    font-size: 18px;
 	    font-weight: 900;
 	    color: black;
-	}
+	}*/
 
 /*
 	.mapCircle {
@@ -50,27 +56,29 @@
   		stroke: #fff;
 	}
 
-	.exploration {
-		border-bottom: 2px solid rgb(250, 135, 117);
+	.blue {
+		border-bottom: 2px solid rgb(1, 77, 175);
 	}
 
-	.appraisal {
-		border-bottom: 2px solid rgb(205, 52, 181);
+	.red {
+		border-bottom: 2px solid rgb(219, 0, 14);
 	}
 
-	.development {
-		border-bottom: 2px solid rgb(0, 0, 255);
-	}
-
-	.other {
-		border-bottom: 2px solid rgb(118, 118, 118);
+	a {
+		text-decoration: none !important;
+    	border-bottom: 0.0625rem solid #dcdcdc;
+    	color: #c70000;
 	}
 	
-	.notes {
+	a:hover {
+		border-bottom: 0.0625rem solid #c70000;
+	}
+
+/*	.notes {
 		font-family: 'Guardian Text Sans Web',Arial;
 		font-size:0.9rem;
 		color:#767676;
-	}
+	}*/
 
 	.keyText {
 		font-family: 'Guardian Text Sans Web',Arial;
@@ -90,6 +98,12 @@
 		fill:#767676;
 	}
 
+	.keyHeading {
+		font-family: 'Guardian Text Sans Web',Arial;
+		font-size:14px;
+		fill:#767676;
+	}
+
 	#statusMessage {
 		position: absolute;
 		top:20%;
@@ -101,9 +115,9 @@
 		font-family: 'Guardian Text Sans Web',Arial;
 		position: absolute;
 		top:2%;
-		right:10%;
+		left:10%;
 		pointer-events: none;
-		background-color:#005689;
+		background-color:#6f6f6f;
 		border-radius: 70px;
 		-moz-border-radius: 70px;
 		-webkit-border-radius:70px;
@@ -112,6 +126,36 @@
 		text-align: center;
 		color:#FFF;
 	}
+
+	#keyContainer {
+		position: absolute;
+		top:1.5%;
+		right:8%;
+		pointer-events: none;
+		width:100px;
+		height:80px;
+	}
+
+	@media (max-width: 500px) {
+		#timeDate {
+			top:1%;
+			left:1%;
+		}
+
+		#keyContainer {
+			top:auto;
+			bottom:2%;
+			left:0.5%;
+		}
+	}
+
+
+	.keyCircle {
+		fill:#dfdfdf;
+		stroke:#767676;
+		stroke-width:0.5px;
+	}
+
 
 	#monthText {
 		margin-top:10px;
