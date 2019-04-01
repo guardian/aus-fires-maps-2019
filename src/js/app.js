@@ -42,6 +42,10 @@ function makeMap(states, data, places) {
 						.range(['rgba(219, 0, 14, 0.6)', 'rgba(1, 77, 175, 0.6)'])
 						.domain([0,maxYears])
 
+	// var gradient = d3.scaleLinear()
+	// 					.range(['rgba(1, 77, 175, 0.6)', 'rgba(1, 77, 175, 0.6)'])
+	// 					.domain([0,maxYears])
+
 
 	var projection = d3.geoMercator()
 	                .scale(1)
