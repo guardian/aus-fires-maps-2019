@@ -1,5 +1,5 @@
-@import "mq";
 @import "fonts";
+@import "mq";
 @import "palette";
 @import "interactives";
 // Uncomment for embeds
@@ -16,8 +16,18 @@
 .interactive-container {
 
 	background: #FFF;
-
+	border-top: solid 1px #dfdfdf;
+	border-bottom: solid 1px #dfdfdf;
 	max-width:1200px;
+
+	.row:after {
+	content: " "; /* Older browser do not support empty content */
+	visibility: hidden;
+	display: block;
+	height: 0;
+	clear: both;
+	}
+
 
 	#mapContainer {
 		position: relative; 
@@ -57,7 +67,7 @@
 	}
 
 	.blue {
-		border-bottom: 2px solid rgb(1, 77, 175);
+		border-bottom: 2px solid rgb(0,0,0);
 	}
 
 	.red {
@@ -115,16 +125,15 @@
 		font-family: 'Guardian Text Sans Web',Arial;
 		position: absolute;
 		top:2%;
-		left:10%;
+		right:2%;
 		pointer-events: none;
-		background-color:#6f6f6f;
-		border-radius: 70px;
+		/*border-radius: 70px;
 		-moz-border-radius: 70px;
-		-webkit-border-radius:70px;
-		width:70px;
+		-webkit-border-radius:70px;*/
+		width:120px;
 		height:70px;
 		text-align: center;
-		color:#FFF;
+		color:#777777;
 	}
 
 	#keyContainer {
@@ -298,4 +307,3 @@
 	}	
 
 }
-

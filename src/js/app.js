@@ -9,48 +9,33 @@ var currentDate = null;
 function makeMap(states, data, places) {
 
 	var statusMessage = d3.select("#statusMessage");
-	// console.log(data, places);
 	var width = document.querySelector("#mapContainer").getBoundingClientRect().width
 	var height = width * 0.6
 	var mobile = false;
 
 	if (width < 861) {
-	    height = width * 0.8;
+	    // height = width * 0.8;
 	    mobile = true;
 	}
 	var margin = {top: 0, right: 0, bottom: 0, left:0}
 	var active = d3.select(null);
-	var scaleFactor = width / 860
-	var parseDate = d3.timeParse("%Y-%m-%d");
+	var scaleFactor = width / 620
+	var parseDate = d3.timeParse("%Y-%m-%d %H%M");
+	var formatDate = d3.timeFormat("%Y-%m-%d");
+	var topRadius = 1 * scaleFactor;
 
-	var topRadius = 10 * scaleFactor;
-	var bottomRadius = 2;
+	// var maxYears = 10 * 364
 
-	// var mapScale = 1.8;
-
-	// if (mobile) {
-	// 	mapScale = 2
-	// }
-
-	var maxYears = 10 * 364
-
-	var radius = d3.scaleSqrt()
-					.range([bottomRadius,topRadius])    
-					.domain([6,400])	
+	var colors = ['rgba(219, 0, 14, 0.6)', 'rgba(0, 0, 0, 0.6)'];				
 
 	var gradient = d3.scaleLinear()
-						.range(['rgba(219, 0, 14, 0.6)', 'rgba(1, 77, 175, 0.6)'])
-						.domain([0,maxYears])
-
-	// var gradient = d3.scaleLinear()
-	// 					.range(['rgba(1, 77, 175, 0.6)', 'rgba(1, 77, 175, 0.6)'])
-	// 					.domain([0,maxYears])
+						.range(['rgba(219, 0, 14, 1)', 'rgba(0, 0, 0, 1)'])
+						.domain([0,48])
 
 
 	var projection = d3.geoMercator()
 	                .scale(1)
-	                .translate([0,0])
-
+	                .translate([0,0])	
 
 	var locations = d3.select('#points');	                
 	var imageObj = new Image()
@@ -58,7 +43,6 @@ function makeMap(states, data, places) {
 
 	// console.log(sa2s.objects.sa2s
 	   
-
 	d3.select("#mapContainer canvas").remove();
 	d3.select("#keyContainer svg").remove();
 
@@ -68,45 +52,7 @@ function makeMap(states, data, places) {
 	if (width < 450) {
 		keyWidth = 110
 		keyHeight = 70
-	}
-
-	var key = d3.select("#keyContainer").append("svg")
-					.attr("width", keyWidth)
-	                .attr("height", keyHeight)
-	                .attr("id", "keySvg");
-
-	key.append("svg:circle")
-		.attr("class", "keyCircle")
-		.attr("cx", keyWidth * 0.33)
-		.attr("cy",keyHeight * 0.5)
-		.attr("r", radius(6));
-             
-	key.append("svg:circle")
-		.attr("class", "keyCircle")
-		.attr("cx", keyWidth * 0.66)
-		.attr("cy",keyHeight * 0.5)
-		.attr("r", radius(400));
-
-	key.append("text")
-		.attr("class", "keyLabel")
-		.attr("x", keyWidth * 0.33)
-		.attr("y",keyHeight * 0.8)
-		.attr("text-anchor", "middle")
-		.text("6");	
-
-	key.append("text")
-		.attr("class", "keyLabel")
-		.attr("x", keyWidth * 0.66)
-		.attr("y", keyHeight * 0.8)
-		.attr("text-anchor", "middle")
-		.text("400");		
-	
-	key.append("text")
-		.attr("class", "keyHeading")
-		.attr("x", keyWidth * 0.5)
-		.attr("y", 20)
-		.attr("text-anchor", "middle")
-		.text("Estimated deaths");			
+	}		
 
 	var canvas = d3.select(".interactive-container #mapContainer").append("canvas")	
 	                .attr("width", width)
@@ -118,57 +64,61 @@ function makeMap(states, data, places) {
 
 	// context.clearRect(0, 0, width, height);
 
-	var path = d3.geoPath()
-	    .projection(projection)
-	    .context(context);
-
-	var bounds = path.bounds(topojson.feature(states,states.objects.states));
-
-	var mapScale = 1 / Math.max(
-	    (bounds[1][0] - bounds[0][0]) / width,
-	    (bounds[1][1] - bounds[0][1]) / height);
-
-	var translation = [
-	    (width - mapScale * (bounds[1][0] + bounds[0][0])) / 2,
-	    (height - mapScale * (bounds[1][1] + bounds[0][1])) / 2];
-
-	projection
-		.scale(mapScale)
-		.translate(translation);
-
-	var raster_width = (bounds[1][0] - bounds[0][0]) * mapScale;
-	var raster_height = (bounds[1][1] - bounds[0][1]) * mapScale;
-
-	var rtranslate_x = (width - raster_width) / 2;
-	var rtranslate_y = (height - raster_height) / 2;	       
-
-	var graticule = d3.geoGraticule();  
-
 	var filterPlaces = places.features.filter(function(d){ 
 		if (mobile) {
-			return d.properties.scalerank < 2	
+			return d.properties.scalerank < 6	
 		}
 
 		else {
-			return d.properties.scalerank < 3		
+			return d.properties.scalerank < 7		
 		}
 		
 	});
 	// console.log(filterPlaces);
 
+	var path = d3.geoPath()
+		    .projection(projection)
+		    .context(context);
+
+	var graticule = d3.geoGraticule();  	    	
+
+	var bounds = path.bounds(topojson.feature(states,states.objects.states));
+	var scale = 4
+	var posX = 0.5
+	var posY = 0.5
+	var offsetX = (width * 1.1)
+	var offsetY = (height * 0.3)
+	var mapScale = scale / Math.max(
+	    (bounds[1][0] - bounds[0][0]) / width,
+	    (bounds[1][1] - bounds[0][1]) / height);
+
+	var translation = [
+	    (width - mapScale * (bounds[1][0] + bounds[0][0])) * 0.5 - offsetX,
+	    (height - mapScale * (bounds[1][1] + bounds[0][1])) * 0.5 - offsetY] ;
+
+	projection
+		.scale(mapScale)
+		.translate(translation)
+
+	var raster_width = (bounds[1][0] - bounds[0][0]) * mapScale;
+	var raster_height = (bounds[1][1] - bounds[0][1]) * mapScale;
+
+
+	var rtranslate_x = (width - raster_width) * 0.5 - offsetX;
+	var rtranslate_y = (height - raster_height) * 0.5 - offsetY;		
+
+	var point1 = projection([151.20346,-33.86760])[0]
+	var point2 = projection([151.21432,-33.86760])[0]
+
+	console.log(point1,point2)
+
+	var rCircle = (point2 - point1)
+
+	console.log(rCircle)
 	function drawMap() {
-		// context.beginPath();
-	 //    path(graticule());
-	 //    context.strokeStyle = "#efefef";
-	 //    context.stroke();
-	    
+
+		     
 	    context.drawImage(imageObj, rtranslate_x, rtranslate_y, raster_width, raster_height);
-
-	    // context.beginPath();
-	    // path(topojson.feature(states,states.objects.states));
-	    // context.fillStyle = "#dcdcdc";
-	    // context.fill();
-
 	    context.beginPath();
 	    path(topojson.mesh(states,states.objects.states));
 	    context.strokeStyle= "#bcbcbc";
@@ -190,77 +140,22 @@ function makeMap(states, data, places) {
 
 	}
 
-
-
 	drawMap();
-	      
-	// var colorPurpose = d3.scaleOrdinal()
-	// 			.domain(['exploration', 'appraisal/pilot', 'development/production', 'other'])
-	// 			.range(["rgba(250, 135, 117,0.8)",
-	// 					"rgba(205, 52, 181,0.8)",
-	// 					"rgba(0, 0, 255,0.8)",
-	// 					"rgba(118, 118, 118, 0.8)"]);
-	
-	// var colorStatus = d3.scaleOrdinal()
-	// 			.domain(["plugged and abandoned","suspended/capped/shut-in","producing","water bore","unknown"])
-	// 			.range(["rgba(255,164,116,0.8)",
-	// 					"rgba(244,116,97,0.8)",
-	// 					"rgba(139,0,0,0.8)",
-	// 					"rgba(118, 118, 118, 0.8)",
-	// 					"rgba(118, 118, 118, 0.8)"]);
 
-
-
-	function sortPurposeIndex(purposeText) {
-
-		if (purposeText === 'development/production') {
-			return 0
-		}
-
-		else if (purposeText === 'appraisal/pilot') {
-			return 1
-		}
-
-		else if (purposeText === 'exploration') {
-			return 2
-		}
-
-		else {
-			return 3
-		}
-
-	}		
-
-	function sortStatusIndex(statusText) {
-
-		if (statusText === "producing") {
-			return 0
-		}
-
-		else if (statusText === "suspended/capped/shut-in") {
-			return 1
-		}
-
-		else if (statusText === 'plugged and abandoned') {
-			return 2
-		}
-
-		else {
-			return 3
-		}
-
-	}			
+	var boundsLon = [147,154];
+	var boundsLat = [-24,-34];
 
 	data.forEach(function(d) {
-		d.lat = +d.Latitude;
-		d.lon= +d.Longitude;
-		if (firstRun) {
-			d.date = parseDate(d.date);
-		}
-		
-		// d.sort_status = sortStatusIndex(d.status)
-		// d.sort_purpose = sortPurposeIndex(d.purpose)
+		d.lat = +d.latitude;
+		d.lon = +d.longitude;
+		d.date = moment.utc(d.time, "YYYY-MM-DD HHmm")
 	})
+
+	console.log(data[data.length-1])
+
+	data.sort(function(a, b) {
+	    return a.date - b.date
+	});
 
 	function sortData(sortBy) {
 		data.sort(function(a, b){
@@ -280,43 +175,56 @@ function makeMap(states, data, places) {
 
 	function fillGradient(date1, date2) {
 		//Get 1 day in milliseconds
-		var one_day=1000*60*60*24;
+		
+		var one_hour=1000*60*60;
 
 		// Convert both dates to milliseconds
-		var date1_ms = date1.getTime();
-		var date2_ms = date2.getTime();
+		var date1_ms = date1.valueOf();
+		var date2_ms = date2.valueOf();
 
 		// Calculate the difference in milliseconds
 		var difference_ms = date2_ms - date1_ms;
 
 		// Convert back to days and return
 		// console.log(Math.round(difference_ms/one_day))
-		var daysDiff = Math.round(difference_ms/one_day)
-		if (daysDiff > maxYears) {
-			daysDiff = maxYears
-		}
+		var daysDiff = Math.round(difference_ms/one_hour)
+		// if (daysDiff > maxYears) {
+		// 	daysDiff = maxYears
+		// }
 		return gradient(Math.round(daysDiff))
 	}
 
+	var circumference = 6371000 * Math.PI * 2;
+	var angle = 1000000 / circumference * 360;
+
+	var circle = d3.geoCircle().center([-100,40]).radius(angle);
 
 	function updateCircles(dateUpto) {
 
 		// draw map
-
-		context.clearRect(0,0,width,height);
+		// context.clearRect(0,0,width,height);
 		// console.log(show)
-		drawMap()
+		// drawMap()
 
-		var uptoDate = parseDate(dateUpto);
+		// var uptoDate = parseDate(dateUpto);
+		
+		// var filterData = data.filter(function(d){ 
+		// 	return d.date < dateUpto
+		// });
 
 		var filterData = data.filter(function(d){ 
-			return d.date < uptoDate
+			return d.date.isSame(dateUpto, "hour")
 		});
 
+
+		// console.log(formatDate(data[0].date))
+
 		filterData.forEach(function(d,i) {
+			var circleColor = colors[1]
+			// console.log(formatDate(d.date), dateUpto)
 			context.beginPath();
-			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], getRadius(d.Total_Dead_Mean), 0, 2 * Math.PI);
-			context.fillStyle = fillGradient(d.date, uptoDate)
+			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], rCircle, 0, 2 * Math.PI);
+			context.fillStyle = fillGradient(d.date, dateUpto)
 		    context.fill();
 		    context.closePath();
 		})
@@ -326,18 +234,19 @@ function makeMap(states, data, places) {
 
 	statusMessage.transition(600).style("opacity",0);
 
-	var animationSpeed = 25
+	var animationSpeed = 50
 
 	// updateCircles('1996-01-01');
 
-
-	var startDateStr = '1794-01-01'
-	var latest = '2018-06-01'
-	// '2018-06-01'
-	var endDate = moment('1930-01-01', 'YYYY-MM-DD')
+	var startDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm")
+	
+	var endDate = moment.utc(data[data.length-1].time, "YYYY-MM-DD HHmm")
+	console.log("endDate",endDate)
 	if (firstRun) {
-		currentDate = moment(startDateStr);
+		currentDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm")
 	}
+
+	console.log("currentDate",currentDate)
 
 	function animate(t) {
 
@@ -347,25 +256,14 @@ function makeMap(states, data, places) {
 			animationRestart();
 		}
 
-		// console.log(currentDate.format("YYYY-MM-DD"));
-		updateCircles(currentDate.format("YYYY-MM-DD"));
-		monthText.text(currentDate.format("MMM"))
-		yearText.text(currentDate.format("YYYY"))
-		currentDate.add(1, 'months'); 
+		// console.log(currentDate.format("YYYY-MM-DD HH:mm"), currentDate.format("YYYY-MM-DD HH:mm"));
+		updateCircles(currentDate);
+		monthText.text(currentDate.local().format("MMM D"))
+		yearText.text(currentDate.local().format("HH:mm"))
+		currentDate.add(1, 'hours'); 
 	
 	}
 
-
-	// sortData('status');
-	// console.log(data)
-	// updateCircles(latest,'status');
-
-	sortData('purpose');
-	// console.log(interval)
-	// if (interval != null) {
-	// 	console.log(interval)
-	// 	interval.stop()
-	// }
 	interval = d3.interval(animate, animationSpeed);
 	var monthText = d3.select("#monthText")
 	var yearText = d3.select("#yearText")
@@ -383,7 +281,7 @@ function makeMap(states, data, places) {
 
 		  	{
 		  		t.stop()
-		  		currentDate = moment(startDateStr, 'YYYY-MM-DD');
+		  		currentDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm");
 				interval.restart(animate, animationSpeed)
 		  	} 
 		}, 1000);
@@ -402,7 +300,7 @@ function makeMap(states, data, places) {
 
 Promise.all([
 	d3.json('<%= path %>/assets/au-states.json'),
-	d3.csv('<%= path %>/assets/combined.csv'),
+	d3.csv('<%= path %>/assets/mapdata2.csv'),
 	d3.json('<%= path %>/assets/places.json')
 ])
 .then((results) =>  {
