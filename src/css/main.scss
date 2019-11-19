@@ -118,7 +118,7 @@
 	#statusMessage {
 		position: absolute;
 		top:20%;
-		left:49%;
+		left:calc(49% - 60px);
 		pointer-events: none;
 	}
 

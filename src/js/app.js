@@ -3,31 +3,37 @@ import * as topojson from "topojson"
 import moment from "moment"
 import hal from './settings'
 /*
-change index in has... as in hal[0] or hal[2]
+change index in hal... as in hal[0] or hal[2]
 0 = Mid north coast
 1 = Sydney
 2 = North and gold coast
 3 = Brisbane
 */
-var settings = hal[1]
+var settings = hal[0]
 var interval = null;
 var firstRun = true;
 var currentDate = null;
+var projection = null
 
 function makeMap(states, data, places) {
 
 	var statusMessage = d3.select("#statusMessage");
-	var width = document.querySelector("#mapContainer").getBoundingClientRect().width
-	var height = width * 0.6
-	var mobile = (width < 861) ? true : false;
-	var margin = {top: 0, right: 0, bottom: 0, left:0}
-	var active = d3.select(null);
-	var scaleFactor = width / 620
-	var parseDate = d3.timeParse("%Y-%m-%d %H%M");
-	var formatDate = d3.timeFormat("%Y-%m-%d");
-	var topRadius = 1 * scaleFactor;
 
-	// var maxYears = 10 * 364
+	var width = document.querySelector("#mapContainer").getBoundingClientRect().width
+
+	var height = width * 0.6
+
+	var mobile = (width < 861) ? true : false;
+
+	var margin = { top: 0, right: 0, bottom: 0, left: 0 }
+
+	var active = d3.select(null);
+
+	var parseDate = d3.timeParse("%Y-%m-%d %H%M");
+
+	var formatDate = d3.timeFormat("%Y-%m-%d");
+
+	var ratio = settings.width / settings.height
 
 	var colors = ['rgba(219, 0, 14, 0.6)', 'rgba(0, 0, 0, 0.6)'];				
 
@@ -35,26 +41,25 @@ function makeMap(states, data, places) {
 						.range(['rgba(219, 0, 14, 1)', 'rgba(0, 0, 0, 1)'])
 						.domain([0,48])
 
-	var projection = d3.geoMercator()
+	projection = d3.geoMercator()
 	                .scale(1)
 	                .translate([0,0])	
 
-	projection.fitSize([settings.width, settings.height], settings.bbox);
+	projection.fitSize([width, width / ratio], settings.bbox);
 
-	var locations = d3.select('#points');	                
+	var locations = d3.select('#points');	 
+
 	var imageObj = new Image()
+
 	imageObj.src = `<%= path %>/assets/satellite/${settings.image}`
 	   
 	d3.select("#mapContainer canvas").remove();
+
 	d3.select("#keyContainer svg").remove();
 
 	var keyWidth = 110
-	var keyHeight = 100
 
-	if (width < 450) {
-		keyWidth = 110
-		keyHeight = 70
-	}		
+	var keyHeight = (width < 450) ? 70 : 100	
 
 	var canvas = d3.select(".interactive-container #mapContainer").append("canvas")	
 	                .attr("width", width)
@@ -64,9 +69,7 @@ function makeMap(states, data, places) {
 
 	var context = canvas.node().getContext("2d"); 	              
 
-	var filterPlaces = places.features.filter(function(d) { 
-		return (mobile) ? d.properties.scalerank < 6 : d.properties.scalerank < 7 ;		
-	});
+	var filterPlaces = places.features.filter((d) => (mobile) ? d.properties.scalerank < 6 : d.properties.scalerank < 7 );
 
 	var path = d3.geoPath()
 		    .projection(projection)
@@ -118,76 +121,45 @@ function makeMap(states, data, places) {
 		d.date = moment.utc(d.time, "YYYY-MM-DD HHmm")
 	})
 
-	console.log(data[data.length-1])
+	data.sort((a, b) => a.date - b.date);
 
-	data.sort(function(a, b) {
-	    return a.date - b.date
-	});
+	var sortData = (sortBy) => data.sort((a, b) =>  d3.descending(a["sort_" + sortBy], b["sort_" + sortBy]))
 
-	function sortData(sortBy) {
-		data.sort(function(a, b){
-   			return d3.descending(a["sort_" + sortBy], b["sort_" + sortBy]);
-		})
-	}
-
-	function getRadius(d) {
-		if (d < 6) {
-			return radius(6)
-		}
-
-		else {
-			return radius(d)
-		}
-	}
+	var getRadius = (d) => (d < 6) ? radius(6) : radius(d);
 
 	function fillGradient(date1, date2) {
-		//Get 1 day in milliseconds
 		
 		var one_hour=1000*60*60;
 
-		// Convert both dates to milliseconds
 		var date1_ms = date1.valueOf();
+
 		var date2_ms = date2.valueOf();
 
-		// Calculate the difference in milliseconds
 		var difference_ms = date2_ms - date1_ms;
 
-		// Convert back to days and return
-		// console.log(Math.round(difference_ms/one_day))
 		var daysDiff = Math.round(difference_ms/one_hour)
-		// if (daysDiff > maxYears) {
-		// 	daysDiff = maxYears
-		// }
+
 		return gradient(Math.round(daysDiff))
 	}
 
 	var circumference = 6371000 * Math.PI * 2;
+
 	var angle = 1000000 / circumference * 360;
 
 	var circle = d3.geoCircle().center([-100,40]).radius(angle);
 
 	function updateCircles(dateUpto) {
 
-		// draw map
 		context.clearRect(0,0,width,height);
+
 		drawMap()
 
 		var uptoDate = parseDate(dateUpto);
 		
-		var filterData = data.filter(function(d){ 
-			return d.date < dateUpto
-		});
-
-		// var filterData = data.filter(function(d){ 
-		// 	return d.date.isSame(dateUpto, "hour")
-		// });
-
-
-		// console.log(formatDate(data[0].date))
+		var filterData = data.filter((d) => d.date < dateUpto);
 
 		filterData.forEach(function(d,i) {
 			var circleColor = colors[1]
-			// console.log(formatDate(d.date), dateUpto)
 			context.beginPath();
 			context.arc(projection([d.lon,d.lat])[0], projection([d.lon,d.lat])[1], rCircle, 0, 2 * Math.PI);
 			context.fillStyle = fillGradient(d.date, dateUpto)
@@ -195,24 +167,19 @@ function makeMap(states, data, places) {
 		    context.closePath();
 		})
 
-
 	}
 
 	statusMessage.transition(600).style("opacity",0);
 
 	var animationSpeed = 50
 
-	// updateCircles('1996-01-01');
-
 	var startDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm")
 	
 	var endDate = moment.utc(data[data.length-1].time, "YYYY-MM-DD HHmm")
-	console.log("endDate",endDate)
+
 	if (firstRun) {
 		currentDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm")
 	}
-
-	console.log("currentDate",currentDate)
 
 	function animate(t) {
 
@@ -222,7 +189,6 @@ function makeMap(states, data, places) {
 			animationRestart();
 		}
 
-		// console.log(currentDate.format("YYYY-MM-DD HH:mm"), currentDate.format("YYYY-MM-DD HH:mm"));
 		updateCircles(currentDate);
 		monthText.text(currentDate.local().format("MMM D"))
 		yearText.text(currentDate.local().format("HH:mm"))
@@ -235,6 +201,7 @@ function makeMap(states, data, places) {
 	var yearText = d3.select("#yearText")
 
 	function animationRestart() {
+
 		console.log("pause")
 		
 		monthText.text("Replaying")
@@ -242,24 +209,37 @@ function makeMap(states, data, places) {
 		var t = d3.timer(function(elapsed) {
 			monthText.text("Paused")
 		  	yearText.text(10 - Math.round(elapsed/1000))
-		  	// console.log(elapsed)
-		  	if (elapsed > 10000)
-
-		  	{
+		  	if (elapsed > 10000){
 		  		t.stop()
 		  		currentDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm");
 				interval.restart(animate, animationSpeed)
 		  	} 
 		}, 1000);
-
-		// setTimeout(function(){ 
-		// 	console.log("restart")
-		// 	currentDate = moment(startDateStr, 'YYYY-MM-DD');
-		// 	interval.restart(animate, animationSpeed)
-		// }, 100000);
 	}
 	firstRun = false
-	// var interval = d3.interval(animate, 200);
+
+}
+
+function initialize(a,b,c) {
+
+	makeMap(a,b,c)
+
+	var to=null
+	var lastWidth = document.querySelector("#mapContainer").getBoundingClientRect()
+	window.addEventListener('resize', function() {
+
+		var thisWidth = document.querySelector("#mapContainer").getBoundingClientRect()
+		if (lastWidth != thisWidth) {
+			
+			window.clearTimeout(to);
+			to = window.setTimeout(function() {
+					interval.stop()
+				    makeMap(a,b,c)
+				}, 100)
+		}
+			
+	})
+
 
 }
 
@@ -274,49 +254,40 @@ Promise.all([
 	// https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
 	// https://css-tricks.com/a-few-functional-uses-for-intersection-observer-to-know-when-an-element-is-in-view/
 
+	var target = document.querySelector('#mapContainer');
 
-	let options = {
-	  root: document.querySelector('#mapContainer'),
-	  rootMargin: "0px 0px -100% 90%",
-	  threshold: 0.5
-	}
+	var a = results[0]
 
-	let callback = (entries, observer) => { 
-	  entries.forEach(entry => {
-		console.log("The map has entered the viewport")
-		observer.unobserve(entry);
-	    // Each entry describes an intersection change for one observed
-	    // target element:
-	    //   entry.boundingClientRect
-	    //   entry.intersectionRatio
-	    //   entry.intersectionRect
-	    //   entry.isIntersecting
-	    //   entry.rootBounds
-	    //   entry.target
-	    //   entry.time
-	  });
-	};
+	var b = results[1]
 
-	let observer = new IntersectionObserver(callback, options);
+	var c = results[2]
 
-	observer.observe(document.querySelector('#mapContainer'))
+    function renderLoop() {
 
-	makeMap(results[0],results[1],results[2])
+        requestAnimationFrame( function() {
 
-	var to=null
-	var lastWidth = document.querySelector("#mapContainer").getBoundingClientRect()
-	window.addEventListener('resize', function() {
+        	var bounding = target.getBoundingClientRect();
 
-		var thisWidth = document.querySelector("#mapContainer").getBoundingClientRect()
-		if (lastWidth != thisWidth) {
-			
-			window.clearTimeout(to);
-			to = window.setTimeout(function() {
-					interval.stop()
-				    makeMap(results[0],results[1],results[2])
-				}, 100)
-		}
-			
-	})
+			if (
+				bounding.top >= 0 &&
+				bounding.left >= 0 &&
+				bounding.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+				bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+			) {
+
+				initialize(a,b,c)
+
+			} else {
+
+				console.log("Outside viewport")
+				
+				renderLoop()
+
+			}
+
+        })
+    }
+
+    renderLoop()
 
 });
