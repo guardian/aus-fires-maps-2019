@@ -1,7 +1,15 @@
 import * as d3 from "d3"
 import * as topojson from "topojson"
 import moment from "moment"
-
+import hal from './settings'
+/*
+change index in has... as in hal[0] or hal[2]
+0 = Mid north coast
+1 = Sydney
+2 = North and gold coast
+3 = Brisbane
+*/
+var settings = hal[1]
 var interval = null;
 var firstRun = true;
 var currentDate = null;
@@ -11,12 +19,7 @@ function makeMap(states, data, places) {
 	var statusMessage = d3.select("#statusMessage");
 	var width = document.querySelector("#mapContainer").getBoundingClientRect().width
 	var height = width * 0.6
-	var mobile = false;
-
-	if (width < 861) {
-	    // height = width * 0.8;
-	    mobile = true;
-	}
+	var mobile = (width < 861) ? true : false;
 	var margin = {top: 0, right: 0, bottom: 0, left:0}
 	var active = d3.select(null);
 	var scaleFactor = width / 620
@@ -32,16 +35,15 @@ function makeMap(states, data, places) {
 						.range(['rgba(219, 0, 14, 1)', 'rgba(0, 0, 0, 1)'])
 						.domain([0,48])
 
-
 	var projection = d3.geoMercator()
 	                .scale(1)
 	                .translate([0,0])	
 
+	projection.fitSize([settings.width, settings.height], settings.bbox);
+
 	var locations = d3.select('#points');	                
 	var imageObj = new Image()
-	imageObj.src = '<%= path %>/assets/aus-crop-light.png'
-
-	// console.log(sa2s.objects.sa2s
+	imageObj.src = `<%= path %>/assets/satellite/${settings.image}`
 	   
 	d3.select("#mapContainer canvas").remove();
 	d3.select("#keyContainer svg").remove();
@@ -62,68 +64,36 @@ function makeMap(states, data, places) {
 
 	var context = canvas.node().getContext("2d"); 	              
 
-	// context.clearRect(0, 0, width, height);
-
-	var filterPlaces = places.features.filter(function(d){ 
-		if (mobile) {
-			return d.properties.scalerank < 6	
-		}
-
-		else {
-			return d.properties.scalerank < 7		
-		}
-		
+	var filterPlaces = places.features.filter(function(d) { 
+		return (mobile) ? d.properties.scalerank < 6 : d.properties.scalerank < 7 ;		
 	});
-	// console.log(filterPlaces);
 
 	var path = d3.geoPath()
 		    .projection(projection)
 		    .context(context);
 
-	var graticule = d3.geoGraticule();  	    	
-
-	var bounds = path.bounds(topojson.feature(states,states.objects.states));
-	var scale = 4
-	var posX = 0.5
-	var posY = 0.5
-	var offsetX = (width * 1.1)
-	var offsetY = (height * 0.3)
-	var mapScale = scale / Math.max(
-	    (bounds[1][0] - bounds[0][0]) / width,
-	    (bounds[1][1] - bounds[0][1]) / height);
-
-	var translation = [
-	    (width - mapScale * (bounds[1][0] + bounds[0][0])) * 0.5 - offsetX,
-	    (height - mapScale * (bounds[1][1] + bounds[0][1])) * 0.5 - offsetY] ;
-
-	projection
-		.scale(mapScale)
-		.translate(translation)
-
-	var raster_width = (bounds[1][0] - bounds[0][0]) * mapScale;
-	var raster_height = (bounds[1][1] - bounds[0][1]) * mapScale;
-
-
-	var rtranslate_x = (width - raster_width) * 0.5 - offsetX;
-	var rtranslate_y = (height - raster_height) * 0.5 - offsetY;		
+	var graticule = d3.geoGraticule();  	    
 
 	var point1 = projection([151.20346,-33.86760])[0]
-	var point2 = projection([151.21432,-33.86760])[0]
 
-	console.log(point1,point2)
+	var point2 = projection([151.21432,-33.86760])[0]
 
 	var rCircle = (point2 - point1)
 
-	console.log(rCircle)
 	function drawMap() {
 
-		     
-	    context.drawImage(imageObj, rtranslate_x, rtranslate_y, raster_width, raster_height);
-	    context.beginPath();
-	    path(topojson.mesh(states,states.objects.states));
-	    context.strokeStyle= "#bcbcbc";
-	    context.stroke();
-	    context.closePath();
+        var nw = projection(settings.northWest)
+        var se = projection(settings.southEast)    
+        var sx = 0
+        var sy = 0
+        var sw = settings.width
+        var sh = settings.height
+        var dx = nw[0]
+        var dy = nw[1]
+        var dw = se[0] - nw[0]
+        var dh = se[1] - nw[1]
+        
+        context.drawImage(imageObj, sx, sy, sw, sh, dx, dy, dw, dh);  
 
 	    filterPlaces.forEach(function(d,i) {
 			context.beginPath();
@@ -141,9 +111,6 @@ function makeMap(states, data, places) {
 	}
 
 	drawMap();
-
-	var boundsLon = [147,154];
-	var boundsLat = [-24,-34];
 
 	data.forEach(function(d) {
 		d.lat = +d.latitude;
@@ -299,10 +266,41 @@ function makeMap(states, data, places) {
 
 Promise.all([
 	d3.json('<%= path %>/assets/au-states.json'),
-	d3.csv('<%= path %>/assets/Mid_north_coast.csv'),
+	d3.csv(`<%= path %>/assets/${settings.csv}`),
 	d3.json('<%= path %>/assets/places.json')
 ])
 .then((results) =>  {
+
+	// https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+	// https://css-tricks.com/a-few-functional-uses-for-intersection-observer-to-know-when-an-element-is-in-view/
+
+
+	let options = {
+	  root: document.querySelector('#mapContainer'),
+	  rootMargin: "0px 0px -100% 90%",
+	  threshold: 0.5
+	}
+
+	let callback = (entries, observer) => { 
+	  entries.forEach(entry => {
+		console.log("The map has entered the viewport")
+		observer.unobserve(entry);
+	    // Each entry describes an intersection change for one observed
+	    // target element:
+	    //   entry.boundingClientRect
+	    //   entry.intersectionRatio
+	    //   entry.intersectionRect
+	    //   entry.isIntersecting
+	    //   entry.rootBounds
+	    //   entry.target
+	    //   entry.time
+	  });
+	};
+
+	let observer = new IntersectionObserver(callback, options);
+
+	observer.observe(document.querySelector('#mapContainer'))
+
 	makeMap(results[0],results[1],results[2])
 
 	var to=null
