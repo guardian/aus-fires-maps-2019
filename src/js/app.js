@@ -202,19 +202,18 @@ function makeMap(states, data, places) {
 	function updateCircles(dateUpto) {
 
 		// draw map
-		// context.clearRect(0,0,width,height);
-		// console.log(show)
-		// drawMap()
+		context.clearRect(0,0,width,height);
+		drawMap()
 
-		// var uptoDate = parseDate(dateUpto);
+		var uptoDate = parseDate(dateUpto);
 		
-		// var filterData = data.filter(function(d){ 
-		// 	return d.date < dateUpto
-		// });
-
 		var filterData = data.filter(function(d){ 
-			return d.date.isSame(dateUpto, "hour")
+			return d.date < dateUpto
 		});
+
+		// var filterData = data.filter(function(d){ 
+		// 	return d.date.isSame(dateUpto, "hour")
+		// });
 
 
 		// console.log(formatDate(data[0].date))
@@ -300,7 +299,7 @@ function makeMap(states, data, places) {
 
 Promise.all([
 	d3.json('<%= path %>/assets/au-states.json'),
-	d3.csv('<%= path %>/assets/mapdata2.csv'),
+	d3.csv('<%= path %>/assets/Mid_north_coast.csv'),
 	d3.json('<%= path %>/assets/places.json')
 ])
 .then((results) =>  {
