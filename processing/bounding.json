@@ -3,7 +3,7 @@
   "features": [
     {
       "type": "Feature",
-      "properties": {"name":"Sydney region"},
+      "properties": {"name":"Sydney region","startDate":"2019-10-27"},
       "geometry": {
         "type": "Polygon",
         "coordinates": [
@@ -34,7 +34,7 @@
     },
     {
       "type": "Feature",
-      "properties": {"name":"Mid north coast"},
+      "properties": {"name":"Mid north coast", "startDate":"2019-10-18"},
       "geometry": {
         "type": "Polygon",
         "coordinates": [
@@ -65,7 +65,7 @@
     },
     {
       "type": "Feature",
-      "properties": {"name":"North and gold coast"},
+      "properties": {"name":"North and gold coast", "startDate":"2019-10-01"},
       "geometry": {
         "type": "Polygon",
         "coordinates": [
@@ -96,7 +96,7 @@
     },
     {
       "type": "Feature",
-      "properties": {"name":"Brisbane and Toowoomba"},
+      "properties": {"name":"Brisbane and Toowoomba","startDate":"2019-11-06"},
       "geometry": {
         "type": "Polygon",
         "coordinates": [

@@ -10,7 +10,7 @@ change index in hal... as in hal[0] or hal[2]
 3 = Brisbane
 */
 var settings = hal[0]
-var interval = null;
+var interval1=null;
 var firstRun = true;
 var currentDate = null;
 var projection = null;
@@ -44,11 +44,15 @@ var projection = null;
 
 function makeMap(states, data, places) {
 
-	var statusMessage = d3.select("#statusMessage");
+	var scope = d3.select("#map1")
+	var statusMessage = scope.select("#statusMessage");
 
 	var width = document.querySelector("#mapContainer").getBoundingClientRect().width
 
-	var height = width * 0.6
+	var ratio = settings.width / settings.height
+
+	console.log("picWidth",settings.width, "picHeight",settings.height, "ratio", ratio)
+	var height = width / ratio
 
 	var mobile = (width < 861) ? true : false;
 
@@ -60,7 +64,7 @@ function makeMap(states, data, places) {
 
 	var formatDate = d3.timeFormat("%Y-%m-%d");
 
-	var ratio = settings.width / settings.height
+	// var ratio = settings.width / settings.height
 
 	var colors = ['rgba(219, 0, 14, 0.6)', 'rgba(0, 0, 0, 0.6)'];				
 
@@ -80,15 +84,15 @@ function makeMap(states, data, places) {
 
 	imageObj.src = `<%= path %>/assets/satellite/${settings.image}`
 	   
-	d3.select("#mapContainer canvas").remove();
+	scope.select("#mapContainer canvas").remove();
 
-	d3.select("#keyContainer svg").remove();
+	scope.select("#keyContainer svg").remove();
 
 	var keyWidth = 110
 
 	var keyHeight = (width < 450) ? 70 : 100	
 
-	var canvas = d3.select(".interactive-container #mapContainer").append("canvas")	
+	var canvas = scope.select("#mapContainer").append("canvas")	
 	                .attr("width", width)
 	                .attr("height", height)
 	                .attr("id", "map-animation-csg")
@@ -96,7 +100,7 @@ function makeMap(states, data, places) {
 
 	var context = canvas.node().getContext("2d"); 	              
 
-	var filterPlaces = places.features.filter((d) => (mobile) ? d.properties.scalerank < 6 : d.properties.scalerank < 7 );
+	var filterPlaces = places.features.filter((d) => (mobile) ? d.properties.scalerank < 7 : d.properties.scalerank < 8 );
 
 	var path = d3.geoPath()
 		    .projection(projection)
@@ -129,8 +133,10 @@ function makeMap(states, data, places) {
 			context.beginPath();
 			context.save();
 			context.fillStyle="#767676";
+			// context.strokeStyle = 'white';
 			context.shadowColor="white";
 			context.shadowBlur=5;
+			// context.strokeText(d.properties.name,projection([d.properties.longitude,d.properties.latitude])[0],projection([d.properties.longitude,d.properties.latitude])[1]);
 			context.fillText(d.properties.name,projection([d.properties.longitude,d.properties.latitude])[0],projection([d.properties.longitude,d.properties.latitude])[1]);
 			context.font = "15px 'Guardian Text Sans Web' Arial";
 		    context.closePath();
@@ -212,7 +218,7 @@ function makeMap(states, data, places) {
 
 		if (currentDate.isSameOrAfter(endDate)) {
 			console.log("stop")
-			interval.stop()
+			interval1.stop()
 			animationRestart();
 		}
 
@@ -223,9 +229,9 @@ function makeMap(states, data, places) {
 	
 	}
 
-	interval = d3.interval(animate, animationSpeed);
-	var monthText = d3.select("#monthText")
-	var yearText = d3.select("#yearText")
+	interval1 = d3.interval(animate, animationSpeed);
+	var monthText = scope.select("#monthText")
+	var yearText = scope.select("#yearText")
 
 	function animationRestart() {
 
@@ -239,7 +245,7 @@ function makeMap(states, data, places) {
 		  	if (elapsed > 10000){
 		  		t.stop()
 		  		currentDate = moment.utc(data[0].time, "YYYY-MM-DD HHmm");
-				interval.restart(animate, animationSpeed)
+				interval1.restart(animate, animationSpeed)
 		  	} 
 		}, 1000);
 	}
@@ -260,7 +266,9 @@ function initialize(a,b,c) {
 			
 			window.clearTimeout(to);
 			to = window.setTimeout(function() {
-					interval.stop()
+					if (interval1 != null) {
+						interval1.stop()	
+					}
 				    makeMap(a,b,c)
 				}, 100)
 		}
@@ -278,43 +286,75 @@ Promise.all([
 ])
 .then((results) =>  {
 
-	// https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
-	// https://css-tricks.com/a-few-functional-uses-for-intersection-observer-to-know-when-an-element-is-in-view/
+	// var iframe = function inIframe () {
+	//     try {
+	//         return window.self !== window.top;
+	//     } catch (e) {
+	//         return true;
+	//     }
+	// }
 
-	var target = document.querySelector('#mapContainer');
+	// // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+	// // https://css-tricks.com/a-few-functional-uses-for-intersection-observer-to-know-when-an-element-is-in-view/
+
+	// var target = document.querySelector('#mapContainer');
+
+	// if (iframe) {
+
+	// }	
 
 	var a = results[0]
 
 	var b = results[1]
 
 	var c = results[2]
+	initialize(a,b,c)
 
-    function renderLoop() {
+	// if (iframe) {
+	// 	parent.window.onscroll = function() {
+	// 	renderLoop()
+	// 	};
 
-        requestAnimationFrame( function() {
+	// }
 
-        	var bounding = target.getBoundingClientRect();
+	// else {
+	// 	 window.onscroll = function() {
+	// 	renderLoop()
+	// 	};
+	// }
 
-			if (
-				bounding.top >= 0 &&
-				bounding.left >= 0 &&
-				bounding.right <= (window.innerWidth || document.documentElement.clientWidth) &&
-				bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight)
-			) {
 
-				initialize(a,b,c)
+ //    function renderLoop() {
 
-			} else {
+ //        	var bounding = target.getBoundingClientRect();
 
-				console.log("Outside viewport")
+	// 		if (
+	// 			bounding.top >= 0 &&
+	// 			bounding.left >= 0 &&
+	// 			bounding.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+	// 			bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+	// 		) {
+	// 			console.log("Inside viewport")
 				
-				renderLoop()
+	// 			if (interval1 == null) {
+	// 				console.log("Initialise mid north coast")
+	// 				initialize(a,b,c)
+	// 			}	
+				
+	// 		} else {
+				
+	// 			if (interval1 != null) {
+	// 					console.log("stopping mid north coast")
+	// 					interval1.stop()
+	// 					interval1 = null	
+	// 			}
+	// 			console.log("Outside viewport")
+				
+	// 		}
 
-			}
 
-        })
-    }
+ //    }
 
-    renderLoop()
+    
 
 });

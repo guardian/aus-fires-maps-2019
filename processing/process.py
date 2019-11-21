@@ -6,7 +6,7 @@ from shapely.geometry import Point, shape
 import simplejson as json
 #%%
 
-df = pd.read_csv('fire_nrt_M6_86677.csv', dtype={'acq_time': object})
+df = pd.read_csv('fire_nrt_M6_87695.csv', dtype={'acq_time': object})
 
 with open('bounding.json') as f:
 	areas = json.load(f)
@@ -26,6 +26,9 @@ for area in areas['features']:
 	within = df[df['inBounds'] == True]
 	within = within[within['confidence'] > 33]
 	within['time'] = within['acq_date'] + " " + within['acq_time']
+	within['date'] = pd.to_datetime(within['acq_date'])
+
+	within = within[within['date'] > area['properties']['startDate']]
 
 	within = within[['latitude','longitude','time']]
 	within.to_csv('../src/assets/{filename}.csv'.format(filename=area['properties']['name'].replace(" ", "_")), index=False)
