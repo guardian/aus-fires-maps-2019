@@ -9,7 +9,7 @@ change index in hal... as in hal[0] or hal[2]
 2 = North and gold coast
 3 = Brisbane
 */
-var settings = hal[0]
+var settings = hal[2]
 var interval1=null;
 var firstRun = true;
 var currentDate = null;

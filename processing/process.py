@@ -6,7 +6,7 @@ from shapely.geometry import Point, shape
 import simplejson as json
 #%%
 
-df = pd.read_csv('fire_nrt_M6_87695.csv', dtype={'acq_time': object})
+df = pd.read_csv('fires-aug-nov.csv', dtype={'acq_time': object})
 
 with open('bounding.json') as f:
 	areas = json.load(f)
