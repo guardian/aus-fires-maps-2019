@@ -50,7 +50,7 @@
         "d3": "^5.4.0",
         "gulp-rename": "^1.2.2",
         "gulp-replace": "^0.6.1",
-        "moment": "^2.22.2",
+        "moment": "^2.29.2",
         "mustache": "^2.3.0",
         "natives": "^1.1.6",
         "promise-polyfill": "^6.0.2",
